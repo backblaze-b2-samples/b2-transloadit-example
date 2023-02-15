@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+    <a href="{% url 'home' %}">Home</a>
+    / <a href="{% url 'logout' %}">Log out</a>
+    <hr>
+    <div id="uploader">
+        <h2>Upload a Video</h2>
+        <form id="form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <p>
+                <label for="id_title">Title:</label>
+                <input type="text" name="title" maxlength="256" required="" id="id_title">
+            </p>
+            <p>
+                <button type="button" name="button" id="select" onclick="uploadFile()"><b>Select a video</b></button>
+                <button disabled="true" type="submit" id="submit">Upload</button> <span id="fileinfo"></span>
+                <input type="file" name="raw" required="" id="id_raw" accept="video/*">
+            </p>
+        </form>
+    </div>
+
+    <div id="message" style="display: none">
+        <h2>Please wait while your video is uploaded</h2>
+        <img src="{% static 'images/throbber.gif' %}">
+    </div>
+
+    <script>
+        const formEl = document.querySelector('#form');
+        const fileInputEl = document.querySelector('#id_raw');
+        const titleEl = document.querySelector('#id_title');
+        const submitEl = document.querySelector('#submit');
+        const fileInfoEl = document.querySelector('#fileinfo');
+        const selectEl = document.querySelector('#select');
+        const uploaderEl = document.querySelector('#uploader');
+        const messageEl = document.querySelector('#message');
+
+        formEl.addEventListener('submit', handleFormSubmit);
+        fileInputEl.addEventListener('change', handleFileSelectAndTitle);
+        titleEl.addEventListener('input', handleFileSelectAndTitle);
+
+        async function handleFormSubmit(event) {
+            // Show the message, hide the upload form
+            uploaderEl.style.setProperty('display', 'none');
+            messageEl.style.removeProperty('display');
+
+            // Get the file object from the form
+            const file = formEl.elements["raw"].files[0]
+
+            // Discard the 'fake path' in the filename
+            const name = file.name.split("\\").pop()
+
+            // Make a FormData object to POST
+            const formData = new FormData();
+            formData.append('raw', file);
+            formData.append('title', formEl.elements["title"].value);
+            formData.append('csrfmiddlewaretoken', formEl.elements["csrfmiddlewaretoken"].value);
+
+            // POST the file
+            fetch('', {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => {
+                    if (response.ok) {
+                        console.log(`Fetch succeeded; url: ${response.url}`);
+
+                        // Go to detail page
+                        location.href = response.url;
+                    } else {
+                        console.log(`Fetch failed with status code: ${response.status}`);
+                    }
+                })
+                .catch(error => console.log(`Fetch failed: ${error}`));
+
+            // Don't switch the page when the upload is complete
+            event.preventDefault();
+        }
+
+        function handleFileSelectAndTitle() {
+            const curFiles = fileInputEl.files;
+            const titleValue = titleEl.value;
+
+            if (!titleValue) {
+                submitEl.disabled = true;
+                submitEl.textContent = 'Upload'
+
+                if (curFiles.length > 0) {
+                    fileInfoEl.textContent =
+                        `You must give your video a title before you can upload it`;
+                    fileInfoEl.style.color = 'red';
+                }
+            } else if (titleValue && curFiles.length > 0) {
+                submitEl.disabled = false;
+                submitEl.innerHTML = '<b>Upload</b>'
+
+                selectEl.textContent = 'Select a video'
+
+                const file = curFiles[0];
+                fileInfoEl.innerHTML =
+                    `👈 Click to upload ${file.name} (${humanFileSize(file.size)}) as '${titleValue}'`;
+                fileInfoEl.style = null;
+            } else {
+                // titleText && curFiles.length == 0
+                submitEl.disabled = true;
+                submitEl.textContent = 'Upload'
+
+                selectEl.innerHTML = '<b>Select a video</b>'
+            }
+        }
+
+        function humanFileSize(number) {
+            if (number < (1 << 10)) {
+                return number + 'bytes';
+            } else if (number < (1 << 20)) {
+                return (number / (1 << 10)).toFixed(1) + 'KB';
+            } else if (number < (1 << 30)) {
+                return (number / (1 << 20)).toFixed(1) + 'MB';
+            } else {
+                return (number / (1 << 30)).toFixed(1) + 'GB';
+            }
+        }
+
+        function uploadFile() {
+            fileInputEl.click();
+        }
+    </script>
+{% endblock %}
