@@ -7,6 +7,8 @@
 * Cloud object storage at [Backblaze B2](https://www.backblaze.com/b2/cloud-storage.html).
 * Content distribution via [bunny.net](bunny.net).
 
+![CatTube index page](cattube.png)
+
 ## User Experience
 
 * Users upload videos from their browser to TransloadIt via the Uppy widget on the web app's 'Upload Video' page.
