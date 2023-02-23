@@ -1,9 +1,14 @@
 import json
+import hmac
+import hashlib
+import json
+from datetime import datetime, timedelta
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
+from django.utils.safestring import mark_safe
 from django.views.decorators.cache import never_cache
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView
@@ -18,8 +23,8 @@ from urllib.parse import urlsplit, urlunsplit
 from .models import Video
 from .serializers import VideoSerializer, NotificationSerializer
 
-videos_url_path = settings.VIDEOS_URL_PATH
-thumbnails_url_path = settings.THUMBNAILS_URL_PATH
+videos_url_path = f'https://{settings.AWS_S3_CUSTOM_DOMAIN}/watermarked/'
+thumbnails_url_path = f'https://{settings.AWS_S3_CUSTOM_DOMAIN}/thumbnail/'
 
 # From https://codereview.stackexchange.com/a/24416/27914
 def url_path_join(*parts):
@@ -62,8 +67,32 @@ class VideoCreateView(CreateView):
         return reverse_lazy('watch', kwargs={'video_detail': self.object.id})
 
     def get_context_data(self, **kwargs):
+        template_id = settings.TRANSLOADIT_TEMPLATE_ID
+        notify_url = self.request.build_absolute_uri(reverse('notification'))  # .replace("http:", "https:")
+
+        # Signature calculation from
+        # https://transloadit.com/docs/topics/signature-authentication/#signature-python-sdk-demo
+        expires = (timedelta(seconds=60 * 60) + datetime.utcnow()).strftime("%Y/%m/%d %H:%M:%S+00:00")
+        auth_key = settings.TRANSLOADIT_KEY
+        auth_secret = settings.TRANSLOADIT_SECRET
+        params = {
+            'auth': {
+                'key': auth_key,
+                'expires': expires,
+            },
+            'template_id': template_id,
+            'notify_url': notify_url
+        }
+
+        message = json.dumps(params, separators=(',', ':'), ensure_ascii=False)
+        signature = hmac.new(auth_secret.encode('utf-8'),
+                             message.encode('utf-8'),
+                             hashlib.sha384).hexdigest()
+
         context = super().get_context_data(**kwargs)
-        context['notify_url'] = self.request.build_absolute_uri(reverse('notification')).replace("http:", "https:")
+        # Need to mark message as safe so Django doesn't escape the JSON
+        context['params'] = mark_safe(message)
+        context['signature'] = 'sha384:' + signature
         return context
 
     def form_valid(self, form):

@@ -38,25 +38,39 @@
 
 Click **Buckets** in the navigation menu on the left, then **Create a Bucket**. Give the bucket a name (you may need more than one try, the bucket name must be globally unique!), leave the remaining settings, and click **Create a Bucket**. Make a note of the **Endpoint** shown in the bucket details; it's a domain name of the form `s3.us-west-004.backblazeb2.com`. Make a note also of the region portion of the endpoint; this is the string following `s3.` and preceding `.backblazeb2.com`. In the example above, it's `us-west-004`, but yours may be different.
 
-Now click **App Keys** in the left nav menu, then **Add a New Application Key**. Name the key `read-only-key-for-bunny`, select the bucket you just created, select **Read Only** and **Allow List All Bucket Names**, and click **Create New Key**. Make careful note of the key - you will not be able to retrieve it after navigating away from the page!
+You'll be creating three Application Keys–one each for bunny.net, TransloadIt and the web application. Why three keys? The three B2 clients need different levels of access. bunny.net only needs to read files to cache and deliver them; TransloadIt only needs to write raw and processed files; the web app needs read/write access, but only to files with the `static/` prefix - Django's `collectstatic` command uploads new and updated assets such as CSS files and images with this prefix. 
 
-Click **Add a New Application Key** again. This time, name the key `write-only-key-for-transloadit`, select the bucket you just created, select **Write Only** and **Allow List All Bucket Names**, and click **Create New Key**. Again, make careful note of the key!
+Click **App Keys** in the left nav menu, then **Add a New Application Key**. Name the key `read-only-key-for-bunny`, select the bucket you just created, select **Read Only** and **Allow List All Bucket Names**, and click **Create New Key**. Make careful note of the key - you will not be able to retrieve it after navigating away from the page!
+
+Now click **Add a New Application Key** a second time and name the key `write-only-key-for-transloadit`. Select your bucket, **Write Only** and **Allow List All Bucket Names**, and click **Create New Key**. Again, make careful note of the key!
+
+Add a third Application Key, named `read-write-key-for-video-app`, with **Read and Write** access to the bucket you just created, and **Allow List All Bucket Names**. One more time, copy that key somewhere safe!
 
 ## bunny.net
 
-Click **Pull Zones** in the navigation menu on the left, then **Add Pull Zone**. Give your Pull Zone a globally unique name, and set the **Origin URL** to `https://<your bucket name>.<your bucket endpoint>`. For example, if your bucket was called `acme-movies` and the endpoint was `s3.us-west-004.backblazeb2.com`, the Origin URL would be `https://acme-movies.s3.us-west-004.backblazeb2.com`. Scroll down and click **Add Pull Zone**.
+Click **Pull Zones** in the navigation menu on the left, then **Add Pull Zone**. Give your Pull Zone a globally unique name, and set the **Origin URL** to `https://<your bucket name>.<your bucket endpoint>`. For example, if your bucket was called `example-movies` and the endpoint was `s3.us-west-004.backblazeb2.com`, the Origin URL would be `https://example-movies.s3.us-west-004.backblazeb2.com`. Scroll down and click **Add Pull Zone**.
 
 Click **Skip the Instructions**, then click **Caching** in the left nav menu. Scroll down and enable **Optimize for video delivery**. This setting configures bunny.net to cut up cached files and store them in 5MB chunks. This allows bunny.net to process byte range requests for uncached files allowing video skipping for uncached content and lower origin traffic.
 
 Now, in the left nav menu, click **Security**, then **S3 Authentication**. Click **Enable S3 Authentication** and paste in the read-only credentials you created in Backblaze: paste the Application Key ID into **AWS Key**, the Application Key into **AWS Secret**, and the region portion of your bucket's endpoint into **AWS Region Name**. Click **Save AWS Configuration**.
 
-Finally, click **Edge Rules** in the left nav bar, then **Add Edge Rule**. Leave the action set to **Block Request** and give the rule a suitable description, for example: "Allow requests to only the watermarked and thumbnail folders". Set **Condition Matching** to **Match None**, then click **Add Condition**. Leave the attribute set to **Request URL** and operation as **Match Any**, and set the value to `https://<your pull zone hostname>/thumbnail/*`. For example, if your Pull Zone hostname was `acme-content.b-cdn.net`, you would set the value to `https://acme-content.b-cdn.net/thumbnail/*`. Click **Add Trigger** and set the value to `https://<your pull zone hostname>/watermarked/*`. Click **Save Edge Rule**.
+Finally, click **Edge Rules** in the left nav bar, then **Add Edge Rule**. Leave the action set to **Block Request** and give the rule a suitable description, for example: "Allow requests to only the static, watermarked and thumbnail folders". Set **Condition Matching** to **Match None**, then click **Add Condition**. Leave the attribute set to **Request URL** and operation as **Match Any**, and add three trigger values:
+
+* `https://<your pull zone hostname>/thumbnail/*`
+* `https://<your pull zone hostname>/watermarked/*`
+* `https://<your pull zone hostname>/static/*`
+
+Click **Save Edge Rule**. Now, bunny.net will disallow requests to URLs outside the permitted list, such as `https://<your pull zone hostname>/resized/*`.
 
 ## TransloadIt
 
+You can create a new App, or use an existing one, as you see fit.
+
 Click **Credentials** in the navigation menu on the left, then, under **Third-party Credentials** click **Add new Credential**. Select **Backblaze** as the service, name the key `backblaze-write-only`, and paste in the Backblaze B2 Bucket name, Application Key ID and Application Key. Click **Save**.
 
-Now click **Templates** in the left nav menu, then **New Template**. Click **Blank** to create an empty template. Give the template a suitable name and paste in the [assembly instructions](assembly-instructions.json). Feel free to replace the `watermark_url` and otherwise customize the template! Finally, click **Create Template** and copy the template id displayed at the top of the page.
+Now click **Templates** in the left nav menu, then **New Template**. Click **Blank** to create an empty template. Give the template a suitable name and paste in the [assembly instructions](assembly-instructions.json). Feel free to replace the `watermark_url` and otherwise customize the template! Click **Create Template** and copy the template id displayed at the top of the page.
+
+Finally, to secure access to your template, click **Settings** in the left nav menu and, under **API Settings**, enable **Require a correct Signature**. The web application contains code to generate a unique signature for each file upload.
 
 ## Web Application
 
@@ -72,27 +86,22 @@ pip install -r requirements.txt
 
 ### Configuration
 
-TBD - rework configuration so that static web assets are in bunny.
-
-Create a `.env` file in the project directory or set environment variables with your configuration:
+Copy `.env.template` to `.env`, or set environment variables with your configuration:
 
 ```bash
-AWS_S3_REGION_NAME="<for example: us-west-001>"
-AWS_ACCESS_KEY_ID="<your B2 application key ID>"
-AWS_SECRET_ACCESS_KEY="<your B2 application key>"
-AWS_PRIVATE_BUCKET_NAME="<your private B2 bucket, for uploaded videos>"
-AWS_STORAGE_BUCKET_NAME="<your public B2 bucket, for static web assets>"
+AWS_ACCESS_KEY_ID = "<Your Backblaze Application Key ID>"
+AWS_SECRET_ACCESS_KEY = "<Your Backblaze Application Key>"
+AWS_STORAGE_BUCKET_NAME = "<Your Backblaze Bucket>"
+AWS_S3_REGION_NAME = "<Your Backblaze endpoint region, e.g. us-west-004>"
+
+BUNNY_PULL_ZONE_DOMAIN = "<Your bunny.net Pull Zone domain, e.g. example-movies.b-cdn.net>"
+
+TRANSLOADIT_KEY = "<Your TransloadIt Auth Key>"
+TRANSLOADIT_SECRET = "<Your TransloadIt Auth Secret>"
+TRANSLOADIT_TEMPLATE_ID = "<Your TransloadIt Template ID>"
+
+WEB_APPLICATION_HOST = "<Your web application's domain, e.g. movies.example.com>"
 ```
-
-Edit `cattube/settings.py` and add the domain name of your application server to `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS`. For example, if you were running the sample at `videos.example.com` you would use
-
-```python
-ALLOWED_HOSTS = ['videos.example.com']
-
-CSRF_TRUSTED_ORIGINS = ['https://videos.example.com']
-```
-
-_Note that `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` are lists of strings - the square brackets are required._
 
 Run the usual commands to initialize a Django application:
 

@@ -47,13 +47,8 @@
       .use(Transloadit, {
         assemblyOptions (file) {
           return {
-            params: {
-              template_id: '616ddd57490646e886f682241ac5f1ef',
-              auth: {
-                key: 'bb1c8dee15c94ef999e0e8a3ee544f1d',
-              },
-              notify_url: '{{ notify_url }}',
-            },
+            params: {{ params }},
+            signature: '{{ signature }}',
             fields: {
               title: file.meta.title,
             },
