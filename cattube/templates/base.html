@@ -3,10 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>CatTube</title>
-    <link rel="stylesheet" type="text/css" href="{% static 'css/app.css' %}">
-    <style type="text/css">
-
-    </style>
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
 <body>
 <div class="container">
@@ -20,7 +17,19 @@
         {% endblock %}
     </main>
     <footer>
-
+        <hr>
+        <h2>Powered by:</h2>
+        <div class="logo-strip">
+            <img src="{% static 'images/horizontal-red-navy.png' %}"/>
+            <span></span>
+            <img src="{% static 'images/bunny-net.png' %}"/>
+            <span></span>
+            <img src="{% static 'images/vultr-logo.png' %}"/>
+            <span></span>
+            <img src="{% static 'images/logos-transloadit-default.png' %}"/>
+            <span></span>
+            <img src="{% static 'images/logos-uppy-default.png' %}"/>
+        </div>
     </footer>
 </div>
 </body>

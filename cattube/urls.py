@@ -14,5 +14,5 @@ urlpatterns = [
 
     # REST API
     path('api/videos/', views.receive_notification_from_transcoder, name='notification'),
-    path('api/videos/<str:name>', views.video_detail, name='video_detail'),
+    path('api/videos/<str:video_id>', views.video_detail, name='video_detail'),
 ]

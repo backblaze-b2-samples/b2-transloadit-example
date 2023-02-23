@@ -38,3 +38,11 @@ input[type="file"] {
     grid-auto-columns: 320px;
     grid-auto-flow: column;
 }
+
+.logo-strip img {
+    height: 30px;
+}
+.logo-strip span {
+    width: 20px;
+    display: inline-block;
+}

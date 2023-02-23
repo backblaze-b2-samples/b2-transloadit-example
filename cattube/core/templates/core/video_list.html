@@ -15,8 +15,8 @@
         {% for video in videos %}
             {% if video.transcoded and video.thumbnail %}
                 <div>
-                    <a href="/videos/{{ video.raw.name }}">
-                        <img src="{{ video.thumbnail.url }}"><br>
+                    <a href="/videos/{{ video.id }}">
+                        <img style="border: 1px solid #c0c0c0;" src="{{ video.thumbnail }}"><br>
                     </a>
                     <b>{{ video.title }}</b><br>
                     {{ video.user.username }}<br>

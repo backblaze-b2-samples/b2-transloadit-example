@@ -17,7 +17,12 @@ SECRET_KEY = '9tf$jps6u-rxnv8nuur=*z&44$d!*_k@9td4jfaurtd5)xu_50'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['c963-69-181-241-9.ngrok.io']
+
+CSRF_TRUSTED_ORIGINS = ['https://c963-69-181-241-9.ngrok.io']
+
+# Required for ngrok and other proxies that terminate TLS
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Application definition
 
@@ -100,7 +105,6 @@ AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
 AWS_PRIVATE_BUCKET_NAME = os.environ['AWS_PRIVATE_BUCKET_NAME']
 AWS_STORAGE_BUCKET_NAME = os.environ['AWS_STORAGE_BUCKET_NAME']
 AWS_S3_REGION_NAME = os.environ['AWS_S3_REGION_NAME']
-TRANSCODER_WEBHOOK = os.environ['TRANSCODER_WEBHOOK']
 
 AWS_S3_ENDPOINT = f's3.{AWS_S3_REGION_NAME}.backblazeb2.com'
 AWS_S3_ENDPOINT_URL = f'https://{AWS_S3_ENDPOINT}'
@@ -123,3 +127,6 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 
 LOGOUT_REDIRECT_URL = 'home'
+
+VIDEOS_URL_PATH = 'https://metadaddy-movies.b-cdn.net/watermarked/'
+THUMBNAILS_URL_PATH = 'https://metadaddy-movies.b-cdn.net/thumbnail/'

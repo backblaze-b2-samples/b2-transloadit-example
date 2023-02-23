@@ -1,55 +1,43 @@
-# Backblaze B2 Video Sharing Example
+# Backblaze B2 + TransloadIt Video Sharing Example
 
-The [Backblaze B2](https://www.backblaze.com/b2/cloud-storage.html) Video Sharing Example comprises a
-lightweight [Flask](https://palletsprojects.com/p/flask/) [worker app](https://github.com/Backblaze-B2-Samples/b2-transcoder-worker)
-and a web app implemented with [Django](https://www.djangoproject.com) and JavaScript. Together, they implement 'CatTube', a simple
-video sharing site.
+'CatTube' is a simple video sharing website comprising: 
+
+* A web app implemented with [Django](https://www.djangoproject.com) and JavaScript.
+* Video uploading with [Uppy](https://uppy.io) and processing at [TransloadIt](https://transloadit.com/).
+* Cloud object storage at [Backblaze B2](https://www.backblaze.com/b2/cloud-storage.html).
 
 ## User Experience
 
-* Users upload videos from their browser via the web app.
+* Users upload videos from their browser via the Uppy widget on the web app's 'Upload Video' page.
 
-* Once the video is uploaded, a JavaScript front end in the browser polls an API at the web app until the transcoded
-  version is available.
+* Once the video is uploaded, a JavaScript front end in the browser polls an API at the web app until the transcoded version is available.
 
-* On receiving the video, the web app:
+* The Uppy widget uploads the video file to TransloadIt, which transforms it according to a preconfigured template. TransloadIt saves the following set of assets to a private bucket in Backblaze B2:
 
-    * Uploads it to B2 via the [Backblaze S3 Compatible API](https://www.backblaze.com/b2/docs/s3_compatible_api.html).
+  * The original video uploaded by the user
+  * An intermediate, resized version of the video
+  * The final resized, watermarked video for sharing
+  * A thumbnail image taken from the watermarked video
 
-    * Saves a record with the B2 object key to its local database.
-
-    * POSTs a JSON notification to the worker app containing the video's B2 object key and a callback URL.
-
-* The worker app:
-
-    * Downloads the video from B2 to local storage.
-
-    * Uses [`ffmpeg`](https://www.ffmpeg.org/download.html) to transcode the video.
-
-    * Uploads the transcoded video to B2.
-
-    * POSTs a JSON notification back to the web app containing the names of the original file and the transcoded
-      version.
+* Once processing is complete, TransloadIt POSTs a JSON notification back to the web app containing full details of the 'assembly' process.
 
 * The web app updates the video's database record with the name of the transcoded file.
 
-* The next call from the JavaScript front end will return with the name of the transcoded video, signalling that the
-  transcoding operation is complete. The browser shows the transcoded video, ready for viewing.
+* The next call from the JavaScript front end will return with the name of the transcoded video, signalling that the transcoding operation is complete. The browser shows the transcoded video, ready for viewing.
 
 ## Prerequisites
 
+* An internet-accessible host
 * [Python 3.9.2](https://www.python.org/downloads/release/python-392/) (other Python versions _may_ work) and `pip`
-* [`ffmpeg`](https://www.ffmpeg.org/download.html) (Worker only)
+* Backblaze account
+* TransloadIt account
 
 ## Installation
 
-You may deploy both apps on the same host, listening on different ports, or on two different hosts. If the apps are running on different hosts, you must ensure that there is connectivity on the ports you are using.
-
-Clone this repository onto each host. On each host, `cd` into the local repository directory, then use `pip install` to install dependencies for the components as required:
-
-For the web application:
+Clone this repository onto the host, `cd` into the local repository directory, then use `pip install` to install dependencies for the components as required:
 
 ```bash
+git clone 
 cd web-application
 pip install -r requirements.txt
 cd ..

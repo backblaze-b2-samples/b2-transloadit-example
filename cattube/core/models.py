@@ -1,23 +1,19 @@
 from django.contrib.auth.models import User
 from django.db import models
 
-from cattube.storage_backends import PrivateMediaStorage
-
 
 class Video(models.Model):
     title = models.CharField(max_length=256)
+    assembly_id = models.CharField(max_length=256)
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    raw = models.FileField(storage=PrivateMediaStorage())
-    transcoded = models.FileField(storage=PrivateMediaStorage(), default=None, blank=True, null=True)
-    thumbnail = models.FileField(storage=PrivateMediaStorage(), default=None, blank=True, null=True)
+    transcoded = models.URLField()
+    thumbnail = models.URLField()
     user = models.ForeignKey(User, related_name='videos', on_delete=models.CASCADE)
 
     def __str__(self):
-        return f'"{self.title}", uploaded at {self.uploaded_at}, upload {self.raw}, transcoded {self.transcoded}, user {self.user.username}'
+        return f'"{self.title}", uploaded at {self.uploaded_at}, assembly_id {self.assembly_id}, transcoded {self.transcoded}, user {self.user.username}'
 
 
 class Notification(models.Model):
-    status = models.CharField(max_length=16)
-    inputObject = models.CharField(max_length=1024)
-    outputObject = models.CharField(max_length=1024)
-    thumbnail = models.CharField(max_length=1024)
+    transloadit = models.CharField(max_length=65536)
+    signature = models.CharField(max_length=40)

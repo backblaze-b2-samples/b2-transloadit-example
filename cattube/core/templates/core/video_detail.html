@@ -7,7 +7,7 @@
     <hr>
     {% if object.transcoded %}
         <video width="640" height="360" controls>
-            <source src="{{ object.transcoded.url }}" type="video/mp4">
+            <source src="{{ object.transcoded }}" type="video/mp4">
         </video>
         <h2>{{ object.title }}</h2>
         {{ video.user.username }}<br>
@@ -18,9 +18,9 @@
         <img id="throbber" src="{% static 'images/throbber.gif' %}">
 
         <script>
-            async function pollForTranscoded(name) {
-                console.log(`Polling for ${name}`)
-                const response = await fetch(`/api/videos/${name}`)
+            async function pollForTranscoded(id) {
+                console.log(`Polling for ${id}`)
+                const response = await fetch(`/api/videos/${id}`)
                     .then(response => {
                         if (response.ok) {
                             return response.json();
@@ -33,8 +33,8 @@
             }
 
             async function handleLoad(event) {
-                const name = location.pathname.split('/').pop();
-                setInterval(pollForTranscoded, 1000, name);
+                const id = location.pathname.split('/').pop();
+                setInterval(pollForTranscoded, 1000, id);
             }
 
             window.onload = handleLoad;
