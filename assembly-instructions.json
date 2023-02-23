@@ -1,0 +1,53 @@
+{
+  "steps": {
+    ":original": {
+      "robot": "/upload/handle"
+    },
+    "resized": {
+      "use": ":original",
+      "robot": "/video/encode",
+      "result": true,
+      "ffmpeg_stack": "v4.3.1",
+      "preset": "ipad-high",
+      "resize_strategy": "fillcrop",
+      "turbo": true
+    },
+    "watermarked": {
+      "use": "resized",
+      "robot": "/video/encode",
+      "result": true,
+      "ffmpeg_stack": "v4.3.1",
+      "preset": "ipad-high",
+      "turbo": true,
+      "watermark_opacity": 0.7,
+      "watermark_position": "top-right",
+      "watermark_size": "25%",
+      "watermark_url": "https://f004.backblazeb2.com/file/metadaddy-public/horizontal-white-white-1024x366.png",
+      "watermark_x_offset": -10,
+      "watermark_y_offset": 10
+    },
+    "thumbnail": {
+      "use": "watermarked",
+      "robot": "/video/thumbs",
+      "count": 1,
+      "offsets": [
+        "10%"
+      ],
+      "width": 320,
+      "height": 320,
+      "resize_strategy": "fit",
+      "ffmpeg_stack": "v4.3.1"
+    },
+    "exported": {
+      "use": [
+        "resized",
+        "watermarked",
+        ":original",
+        "thumbnail"
+      ],
+      "robot": "/backblaze/store",
+      "credentials": "backblaze-write-only",
+      "path": "${previous_step.name}/${assembly.id}/${file.name}"
+    }
+  }
+}
