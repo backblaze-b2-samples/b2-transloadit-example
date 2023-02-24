@@ -10,7 +10,8 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('upload/', views.VideoCreateView.as_view(), name='upload'),
     path('videos/delete_all', views.delete_all_videos),
-    path('videos/<str:video_detail>', views.VideoDetailView.as_view(), name='watch'),
+    path('videos/<str:video_id>', views.VideoDetailView.as_view(), name='watch'),
+    path('videos/delete/<str:video_id>', views.VideoDeleteView.as_view(), name='delete'),
 
     # REST API
     path('api/videos/', views.receive_notification_from_transcoder, name='notification'),

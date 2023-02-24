@@ -12,7 +12,9 @@ from django.utils.safestring import mark_safe
 from django.views.decorators.cache import never_cache
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView
+from django.views.generic.edit import DeleteView
 from django.views.generic.list import ListView
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.decorators import parser_classes
@@ -55,7 +57,7 @@ class VideoListView(ListView):
 class VideoDetailView(DetailView):
     model = Video
     slug_field = 'id'
-    slug_url_kwarg = 'video_detail'
+    slug_url_kwarg = 'video_id'
 
 
 @method_decorator(login_required, name='dispatch')
@@ -64,7 +66,7 @@ class VideoCreateView(CreateView):
     fields = ['title', 'assembly_id', ]
 
     def get_success_url(self):
-        return reverse_lazy('watch', kwargs={'video_detail': self.object.id})
+        return reverse_lazy('watch', kwargs={'video_id': self.object.id})
 
     def get_context_data(self, **kwargs):
         template_id = settings.TRANSLOADIT_TEMPLATE_ID
@@ -102,6 +104,16 @@ class VideoCreateView(CreateView):
         return super().form_valid(form)
 
 
+@method_decorator(login_required, name='dispatch')
+class VideoDeleteView(DeleteView):
+    model = Video
+    slug_field = 'id'
+    slug_url_kwarg = 'video_id'
+
+    def get_success_url(self):
+        return reverse('home')
+
+
 @login_required
 def delete_all_videos(request):
     print('Deleting all the videos!')
@@ -115,13 +127,10 @@ def delete_all_videos(request):
 def video_detail(request, video_id):
     print(f'Received request for detail on: {video_id}')
 
-    try:
-        doc = Video.objects.get(id=video_id)
-        serializer = VideoSerializer(doc)
-        print(f'Returning : {serializer.data}')
-        return Response(serializer.data)
-    except Video.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+    doc = get_object_or_404(Video, id=video_id)
+    serializer = VideoSerializer(doc)
+    print(f'Returning : {serializer.data}')
+    return Response(serializer.data)
 
 
 @api_view(['POST'])
@@ -131,21 +140,18 @@ def receive_notification_from_transcoder(request):
     if serializer.is_valid():
         print(f'Received notification: {serializer.data}')
 
-        try:
-            # Remove the path prefixes from the object keys
-            transloadit = json.loads(serializer.data['transloadit'])
-            assembly_id = transloadit['assembly_id']
+        # Remove the path prefixes from the object keys
+        transloadit = json.loads(serializer.data['transloadit'])
+        assembly_id = transloadit['assembly_id']
 
-            print(f'Getting {assembly_id}')
-            doc = Video.objects.get(assembly_id=assembly_id)
+        print(f'Getting {assembly_id}')
+        doc = get_object_or_404(Video, assembly_id=assembly_id)
 
-            doc.transcoded = url_path_join(videos_url_path, assembly_id, transloadit['results']['watermarked'][0]['name'])
-            doc.thumbnail = url_path_join(thumbnails_url_path, assembly_id, transloadit['results']['thumbnail'][0]['name'])
+        doc.transcoded = url_path_join(videos_url_path, assembly_id, transloadit['results']['watermarked'][0]['name'])
+        doc.thumbnail = url_path_join(thumbnails_url_path, assembly_id, transloadit['results']['thumbnail'][0]['name'])
 
-            print(f'Saving {doc}')
-            doc.save()
-        except Video.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        print(f'Saving {doc}')
+        doc.save()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 

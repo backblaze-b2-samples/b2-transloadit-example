@@ -5,40 +5,46 @@
     <a href="{% url 'home' %}">Home</a>
     / <a href="{% url 'logout' %}">Log out</a>
     <hr>
-    {% if object.transcoded %}
-        <video width="640" height="360" controls>
-            <source src="{{ object.transcoded }}" type="video/mp4">
-        </video>
-        <h2>{{ object.title }}</h2>
-        {{ video.user.username }}<br>
-        {{ video.uploaded_at }}
-    {% else %}
-        <h2>Please wait while your video is processed</h2>
+{% if object.transcoded %}
+    <video width="640" height="360" controls>
+        <source src="{{ object.transcoded }}" type="video/mp4">
+    </video>
+    <h2>{{ object.title }}</h2>
+    {{ video.user.username }}<br>
+    {{ video.uploaded_at }}
+{% else %}
+    <h2>Please wait while your video is processed</h2>
 
-        <img id="throbber" src="{% static 'images/throbber.gif' %}">
+    <img id="throbber" src="{% static 'images/throbber.gif' %}">
 
-        <script>
-            async function pollForTranscoded(id) {
-                console.log(`Polling for ${id}`)
-                const response = await fetch(`/api/videos/${id}`)
-                    .then(response => {
-                        if (response.ok) {
-                            return response.json();
-                        }
-                    });
+    <script>
+        async function pollForTranscoded(id) {
+            console.log(`Polling for ${id}`)
+            const response = await fetch(`/api/videos/${id}`)
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                });
 
-                if (response?.transcoded) {
-                    location.reload();
-                }
+            if (response?.transcoded) {
+                location.reload();
             }
+        }
 
-            async function handleLoad(event) {
-                const id = location.pathname.split('/').pop();
-                setInterval(pollForTranscoded, 1000, id);
-            }
+        async function handleLoad(event) {
+            const id = location.pathname.split('/').pop();
+            setInterval(pollForTranscoded, 1000, id);
+        }
 
-            window.onload = handleLoad;
-        </script>
-    {% endif %}
-
+        window.onload = handleLoad;
+    </script>
+{% endif %}
+    <hr>
+    <form method="POST" action="{% url 'delete' object.id %}">
+        {% csrf_token %}
+        <button type="submit" onclick="return confirm('Are you sure do you want to delete \'{{object.title}}\'?')">
+            Delete Video
+        </button>
+    </form>
 {% endblock %}
