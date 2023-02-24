@@ -41,7 +41,12 @@ input[type="file"] {
 .logo-strip img {
     height: 30px;
 }
+
 .logo-strip span {
     width: 20px;
     display: inline-block;
+}
+
+div.logo-strip > a {
+    text-decoration: none;
 }
