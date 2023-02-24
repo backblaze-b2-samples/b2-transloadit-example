@@ -35,8 +35,7 @@ input[type="file"] {
 #grid {
     display: grid;
     gap: 10px;
-    grid-auto-columns: 320px;
-    grid-auto-flow: column;
+    grid-template-columns: repeat(auto-fit, 320px);
 }
 
 .logo-strip img {
