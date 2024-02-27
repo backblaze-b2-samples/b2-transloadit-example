@@ -28,6 +28,10 @@
 
 * The next call from the JavaScript front end will return with the name of the transcoded video, signalling that the transcoding operation is complete. The browser shows the transcoded video, ready for viewing.
 
+This webinar recording shows the website in action and explains how the pieces fit together:
+
+[![Scaling Media Delivery Workflows with bunny.net and Backblaze](https://img.youtube.com/vi/c8-0mr4W2Dw/maxresdefault.jpg)](https://www.youtube.com/watch?v=c8-0mr4W2Dw)
+
 ## Prerequisites
 
 * An internet-accessible host
