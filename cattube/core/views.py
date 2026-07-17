@@ -1,11 +1,14 @@
 import json
 import hmac
 import hashlib
-import json
 from datetime import datetime, timedelta
+from json import JSONDecodeError
+from urllib.parse import urlsplit, urlunsplit
+
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
 from django.utils.safestring import mark_safe
@@ -14,13 +17,11 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView
 from django.views.generic.edit import DeleteView
 from django.views.generic.list import ListView
-from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.decorators import parser_classes
 from rest_framework.parsers import FormParser
 from rest_framework.response import Response
-from urllib.parse import urlsplit, urlunsplit
 
 from .models import Video
 from .serializers import VideoSerializer, NotificationSerializer
@@ -42,6 +43,15 @@ def url_path_join(*parts):
 
 def first(sequence, default=''):
     return next((x for x in sequence if x), default)
+
+
+def valid_transloadit_signature(transloadit_payload, signature):
+    expected = 'sha384:' + hmac.new(
+        settings.TRANSLOADIT_SECRET.encode('utf-8'),
+        transloadit_payload.encode('utf-8'),
+        hashlib.sha384,
+    ).hexdigest()
+    return hmac.compare_digest(signature, expected)
 
 
 class VideoListView(ListView):
@@ -136,19 +146,31 @@ def video_detail(request, video_id):
 @api_view(['POST'])
 @parser_classes([FormParser])
 def receive_notification_from_transcoder(request):
+    transloadit_payload = request.data.get('transloadit')
+    signature = request.data.get('signature', '')
+    if transloadit_payload and not valid_transloadit_signature(transloadit_payload, signature):
+        return Response(status=status.HTTP_403_FORBIDDEN)
+
     serializer = NotificationSerializer(data=request.data)
     if serializer.is_valid():
         print(f'Received notification: {serializer.data}')
 
-        # Remove the path prefixes from the object keys
-        transloadit = json.loads(serializer.data['transloadit'])
-        assembly_id = transloadit['assembly_id']
+        try:
+            transloadit = json.loads(serializer.validated_data['transloadit'])
+            assembly_id = transloadit['assembly_id']
+            watermarked_name = transloadit['results']['watermarked'][0]['name']
+            thumbnail_name = transloadit['results']['thumbnail'][0]['name']
+        except (JSONDecodeError, KeyError, IndexError, TypeError):
+            return Response(
+                {'transloadit': ['Invalid TransloadIt notification payload.']},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         print(f'Getting {assembly_id}')
         doc = get_object_or_404(Video, assembly_id=assembly_id)
 
-        doc.transcoded = url_path_join(videos_url_path, assembly_id, transloadit['results']['watermarked'][0]['name'])
-        doc.thumbnail = url_path_join(thumbnails_url_path, assembly_id, transloadit['results']['thumbnail'][0]['name'])
+        doc.transcoded = url_path_join(videos_url_path, assembly_id, watermarked_name)
+        doc.thumbnail = url_path_join(thumbnails_url_path, assembly_id, thumbnail_name)
 
         print(f'Saving {doc}')
         doc.save()

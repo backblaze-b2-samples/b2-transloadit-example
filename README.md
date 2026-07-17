@@ -95,18 +95,25 @@ pip install -r requirements.txt
 Copy `.env.example` to `.env`, or set environment variables with your configuration:
 
 ```bash
-B2_APPLICATION_KEY_ID = "<Your Backblaze Application Key ID>"
-B2_APPLICATION_KEY = "<Your Backblaze Application Key>"
-B2_BUCKET_NAME = "<Your Backblaze Bucket>"
-B2_REGION = "<Your Backblaze endpoint region, e.g. us-west-004>"
-B2_PUBLIC_URL_BASE = "https://<Your bunny.net Pull Zone domain, e.g. example-movies.b-cdn.net>"
+B2_APPLICATION_KEY_ID="<Your Backblaze Application Key ID>"
+B2_APPLICATION_KEY="<Your Backblaze Application Key>"
+B2_BUCKET_NAME="<Your Backblaze Bucket>"
+B2_REGION="<Your Backblaze endpoint region, e.g. us-west-004>"
+B2_PUBLIC_URL_BASE="https://<Your bunny.net Pull Zone domain, e.g. example-movies.b-cdn.net>"
 
-TRANSLOADIT_KEY = "<Your TransloadIt Auth Key>"
-TRANSLOADIT_SECRET = "<Your TransloadIt Auth Secret>"
-TRANSLOADIT_TEMPLATE_ID = "<Your TransloadIt Template ID>"
+TRANSLOADIT_KEY="<Your TransloadIt Auth Key>"
+TRANSLOADIT_SECRET="<Your TransloadIt Auth Secret>"
+TRANSLOADIT_TEMPLATE_ID="<Your TransloadIt Template ID>"
 
-WEB_APPLICATION_HOST = "<Your web application's domain, e.g. movies.example.com>"
+WEB_APPLICATION_HOST="<Your web application's domain, e.g. movies.example.com>"
 ```
+
+Before deploying this version, update your deployment manifest or secret store
+to provide these `B2_*` names in lockstep with the new code. The app validates
+all required variables at startup and reports every missing name at once.
+`B2_PUBLIC_URL_BASE` must be an `https://` public or CDN base URL. A bare
+pull-zone host is normalized to `https://` for migration, but update the stored
+value to include the scheme.
 
 Run the usual commands to initialize a Django application:
 

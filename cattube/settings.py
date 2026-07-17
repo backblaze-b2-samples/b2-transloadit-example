@@ -1,10 +1,50 @@
 import os
 from urllib.parse import urlparse
+from urllib.parse import urlunparse
 
+from django.core.exceptions import ImproperlyConfigured
 # Never put credentials in your code!
 from dotenv import load_dotenv
 
 load_dotenv()
+
+REQUIRED_ENV_VARS = (
+    'WEB_APPLICATION_HOST',
+    'B2_APPLICATION_KEY_ID',
+    'B2_APPLICATION_KEY',
+    'B2_BUCKET_NAME',
+    'B2_REGION',
+    'B2_PUBLIC_URL_BASE',
+    'TRANSLOADIT_KEY',
+    'TRANSLOADIT_SECRET',
+    'TRANSLOADIT_TEMPLATE_ID',
+)
+
+
+def _require_env_vars(environ=os.environ):
+    missing = [name for name in REQUIRED_ENV_VARS if not environ.get(name)]
+    if missing:
+        raise ImproperlyConfigured(
+            'Missing required environment variables: ' + ', '.join(missing)
+        )
+
+
+def _normalize_public_url_base(value):
+    public_url_base = value.strip().rstrip('/')
+    if '://' not in public_url_base:
+        public_url_base = f'https://{public_url_base}'
+
+    parsed = urlparse(public_url_base)
+    if parsed.scheme != 'https' or not parsed.netloc:
+        raise ImproperlyConfigured('B2_PUBLIC_URL_BASE must be an https:// URL with a host.')
+    if parsed.query or parsed.fragment:
+        raise ImproperlyConfigured('B2_PUBLIC_URL_BASE must not include a query string or fragment.')
+
+    path = parsed.path.rstrip('/')
+    return urlunparse((parsed.scheme, parsed.netloc, path, '', '', ''))
+
+
+_require_env_vars()
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -109,10 +149,11 @@ B2_APPLICATION_KEY_ID = os.environ['B2_APPLICATION_KEY_ID']
 B2_APPLICATION_KEY = os.environ['B2_APPLICATION_KEY']
 B2_BUCKET_NAME = os.environ['B2_BUCKET_NAME']
 B2_REGION = os.environ['B2_REGION']
-B2_PUBLIC_URL_BASE = os.environ['B2_PUBLIC_URL_BASE'].rstrip('/')
+B2_STORAGE_ENDPOINT_URL = f'https://s3.{B2_REGION}.backblazeb2.com'
+B2_PUBLIC_URL_BASE = _normalize_public_url_base(os.environ['B2_PUBLIC_URL_BASE'])
 
-_public_url = urlparse(B2_PUBLIC_URL_BASE)
-B2_PUBLIC_URL_DOMAIN = _public_url.netloc or _public_url.path
+# django-storages calls this custom_domain, but it may include a path prefix.
+B2_PUBLIC_URL_CUSTOM_DOMAIN = B2_PUBLIC_URL_BASE.removeprefix('https://')
 
 B2_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
