@@ -92,15 +92,14 @@ pip install -r requirements.txt
 
 ### Configuration
 
-Copy `.env.template` to `.env`, or set environment variables with your configuration:
+Copy `.env.example` to `.env`, or set environment variables with your configuration:
 
 ```bash
-AWS_ACCESS_KEY_ID = "<Your Backblaze Application Key ID>"
-AWS_SECRET_ACCESS_KEY = "<Your Backblaze Application Key>"
-AWS_STORAGE_BUCKET_NAME = "<Your Backblaze Bucket>"
-AWS_S3_REGION_NAME = "<Your Backblaze endpoint region, e.g. us-west-004>"
-
-BUNNY_PULL_ZONE_DOMAIN = "<Your bunny.net Pull Zone domain, e.g. example-movies.b-cdn.net>"
+B2_APPLICATION_KEY_ID = "<Your Backblaze Application Key ID>"
+B2_APPLICATION_KEY = "<Your Backblaze Application Key>"
+B2_BUCKET_NAME = "<Your Backblaze Bucket>"
+B2_REGION = "<Your Backblaze endpoint region, e.g. us-west-004>"
+B2_PUBLIC_URL_BASE = "https://<Your bunny.net Pull Zone domain, e.g. example-movies.b-cdn.net>"
 
 TRANSLOADIT_KEY = "<Your TransloadIt Auth Key>"
 TRANSLOADIT_SECRET = "<Your TransloadIt Auth Secret>"

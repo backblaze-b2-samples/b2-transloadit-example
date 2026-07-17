@@ -25,8 +25,8 @@ from urllib.parse import urlsplit, urlunsplit
 from .models import Video
 from .serializers import VideoSerializer, NotificationSerializer
 
-videos_url_path = f'https://{settings.AWS_S3_CUSTOM_DOMAIN}/watermarked/'
-thumbnails_url_path = f'https://{settings.AWS_S3_CUSTOM_DOMAIN}/thumbnail/'
+videos_url_path = f'{settings.B2_PUBLIC_URL_BASE}/watermarked/'
+thumbnails_url_path = f'{settings.B2_PUBLIC_URL_BASE}/thumbnail/'
 
 # From https://codereview.stackexchange.com/a/24416/27914
 def url_path_join(*parts):

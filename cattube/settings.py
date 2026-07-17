@@ -1,4 +1,5 @@
 import os
+from urllib.parse import urlparse
 
 # Never put credentials in your code!
 from dotenv import load_dotenv
@@ -103,24 +104,23 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 
-# Set these in a .env file or as environment variables
-AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
-AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
-AWS_STORAGE_BUCKET_NAME = os.environ['AWS_STORAGE_BUCKET_NAME']
-AWS_S3_REGION_NAME = os.environ['AWS_S3_REGION_NAME']
+# Set these in a .env file or as environment variables.
+B2_APPLICATION_KEY_ID = os.environ['B2_APPLICATION_KEY_ID']
+B2_APPLICATION_KEY = os.environ['B2_APPLICATION_KEY']
+B2_BUCKET_NAME = os.environ['B2_BUCKET_NAME']
+B2_REGION = os.environ['B2_REGION']
+B2_PUBLIC_URL_BASE = os.environ['B2_PUBLIC_URL_BASE'].rstrip('/')
 
-AWS_S3_ENDPOINT = f's3.{AWS_S3_REGION_NAME}.backblazeb2.com'
-AWS_S3_ENDPOINT_URL = f'https://{AWS_S3_ENDPOINT}'
+_public_url = urlparse(B2_PUBLIC_URL_BASE)
+B2_PUBLIC_URL_DOMAIN = _public_url.netloc or _public_url.path
 
-AWS_S3_CUSTOM_DOMAIN = os.environ['BUNNY_PULL_ZONE_DOMAIN']
-
-AWS_S3_OBJECT_PARAMETERS = {
+B2_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
 }
 
-AWS_STATIC_LOCATION = 'static'
+B2_STATIC_LOCATION = 'static'
 STATICFILES_STORAGE = 'cattube.storage_backends.StaticStorage'
-STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+STATIC_URL = f'{B2_PUBLIC_URL_BASE}/static/'
 
 TRANSLOADIT_KEY = os.environ['TRANSLOADIT_KEY']
 TRANSLOADIT_SECRET = os.environ['TRANSLOADIT_SECRET']
