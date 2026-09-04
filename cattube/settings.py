@@ -1,9 +1,50 @@
 import os
+from urllib.parse import urlparse
+from urllib.parse import urlunparse
 
+from django.core.exceptions import ImproperlyConfigured
 # Never put credentials in your code!
 from dotenv import load_dotenv
 
 load_dotenv()
+
+REQUIRED_ENV_VARS = (
+    'WEB_APPLICATION_HOST',
+    'B2_APPLICATION_KEY_ID',
+    'B2_APPLICATION_KEY',
+    'B2_BUCKET_NAME',
+    'B2_REGION',
+    'B2_PUBLIC_URL_BASE',
+    'TRANSLOADIT_KEY',
+    'TRANSLOADIT_SECRET',
+    'TRANSLOADIT_TEMPLATE_ID',
+)
+
+
+def _require_env_vars(environ=os.environ):
+    missing = [name for name in REQUIRED_ENV_VARS if not environ.get(name)]
+    if missing:
+        raise ImproperlyConfigured(
+            'Missing required environment variables: ' + ', '.join(missing)
+        )
+
+
+def _normalize_public_url_base(value):
+    public_url_base = value.strip().rstrip('/')
+    if '://' not in public_url_base:
+        public_url_base = f'https://{public_url_base}'
+
+    parsed = urlparse(public_url_base)
+    if parsed.scheme != 'https' or not parsed.netloc:
+        raise ImproperlyConfigured('B2_PUBLIC_URL_BASE must be an https:// URL with a host.')
+    if parsed.query or parsed.fragment:
+        raise ImproperlyConfigured('B2_PUBLIC_URL_BASE must not include a query string or fragment.')
+
+    path = parsed.path.rstrip('/')
+    return urlunparse((parsed.scheme, parsed.netloc, path, '', '', ''))
+
+
+_require_env_vars()
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -103,24 +144,24 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 
-# Set these in a .env file or as environment variables
-AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
-AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
-AWS_STORAGE_BUCKET_NAME = os.environ['AWS_STORAGE_BUCKET_NAME']
-AWS_S3_REGION_NAME = os.environ['AWS_S3_REGION_NAME']
+# Set these in a .env file or as environment variables.
+B2_APPLICATION_KEY_ID = os.environ['B2_APPLICATION_KEY_ID']
+B2_APPLICATION_KEY = os.environ['B2_APPLICATION_KEY']
+B2_BUCKET_NAME = os.environ['B2_BUCKET_NAME']
+B2_REGION = os.environ['B2_REGION']
+B2_STORAGE_ENDPOINT_URL = f'https://s3.{B2_REGION}.backblazeb2.com'
+B2_PUBLIC_URL_BASE = _normalize_public_url_base(os.environ['B2_PUBLIC_URL_BASE'])
 
-AWS_S3_ENDPOINT = f's3.{AWS_S3_REGION_NAME}.backblazeb2.com'
-AWS_S3_ENDPOINT_URL = f'https://{AWS_S3_ENDPOINT}'
+# django-storages calls this custom_domain, but it may include a path prefix.
+B2_PUBLIC_URL_CUSTOM_DOMAIN = B2_PUBLIC_URL_BASE.removeprefix('https://')
 
-AWS_S3_CUSTOM_DOMAIN = os.environ['BUNNY_PULL_ZONE_DOMAIN']
-
-AWS_S3_OBJECT_PARAMETERS = {
+B2_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
 }
 
-AWS_STATIC_LOCATION = 'static'
+B2_STATIC_LOCATION = 'static'
 STATICFILES_STORAGE = 'cattube.storage_backends.StaticStorage'
-STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+STATIC_URL = f'{B2_PUBLIC_URL_BASE}/static/'
 
 TRANSLOADIT_KEY = os.environ['TRANSLOADIT_KEY']
 TRANSLOADIT_SECRET = os.environ['TRANSLOADIT_SECRET']
